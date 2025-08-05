@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import type { LoginInput, RegisterInput, ForgotPasswordInput, ResetPasswordInput } from "@/lib/validations/auth"
+import type { LoginInput, RegisterInput, ForgotPasswordInput, ResetPasswordInput } from "../lib/validations/auth"
+import { loginApi, registerApi, forgotPasswordApi } from "../lib/api/auth"
 
 // Demo credentials for testing
 const DEMO_CREDENTIALS = {
@@ -15,34 +16,21 @@ export function useAuthForm() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  // Mock login function - Replace with actual API call
+  // Login function using API
   const login = async (data: LoginInput) => {
     setIsLoading(true)
-
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // Demo login logic - Replace with actual authentication
-      if (data.email === DEMO_CREDENTIALS.email && data.password === DEMO_CREDENTIALS.password) {
-        // TODO: Replace with actual API call
-        // const response = await fetch('/api/auth/login', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify(data)
-        // })
-
+      console.log("before call api");
+      const result = await loginApi({ email: data.email!, password: data.password! });
+      console.log(result);
+      if (result.success) {
+        console.log("Login successful:", result)
         toast.success("Welcome back! Login successful.")
-
-        // TODO: Store auth token/session
-        // localStorage.setItem('authToken', response.token)
-        // or use your preferred auth state management
-
         router.push("/dashboard")
-        return { success: true }
+        return { success: true, token: result.token }
       } else {
-        toast.error("Invalid email or password")
-        return { success: false, error: "Invalid credentials" }
+        toast.error(result.error || "Invalid email or password")
+        return { success: false, error: result.error || "Invalid credentials" }
       }
     } catch (error) {
       toast.error("Login failed. Please try again.")
@@ -52,31 +40,19 @@ export function useAuthForm() {
     }
   }
 
-  // Mock register function - Replace with actual API call
+  // Register function using API
   const register = async (data: RegisterInput) => {
     setIsLoading(true)
-
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/auth/register', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     name: data.name,
-      //     email: data.email,
-      //     password: data.password
-      //   })
-      // })
-
-      // Mock success response
-      toast.success("Account created successfully! Please check your email to verify your account.")
-
-      // Redirect to login page
-      router.push("/login?message=registration-success")
-      return { success: true }
+      const result = await registerApi({ email: data.email!, password: data.password! })
+      if (result.success) {
+        toast.success("Account created successfully! Please check your email to verify your account.")
+        router.push("/login?message=registration-success")
+        return { success: true }
+      } else {
+        toast.error(result.error || "Registration failed")
+        return { success: false, error: result.error || "Registration failed" }
+      }
     } catch (error) {
       toast.error("Registration failed. Please try again.")
       return { success: false, error: "Registration failed" }
@@ -85,23 +61,18 @@ export function useAuthForm() {
     }
   }
 
-  // Mock forgot password function - Replace with actual API call
+  // Forgot password function using API
   const forgotPassword = async (data: ForgotPasswordInput) => {
     setIsLoading(true)
-
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/auth/forgot-password', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email: data.email })
-      // })
-
-      toast.success("Password reset link sent! Check your email.")
-      return { success: true }
+      const result = await forgotPasswordApi({ email: data.email })
+      if (result.success) {
+        toast.success("Password reset link sent! Check your email.")
+        return { success: true }
+      } else {
+        toast.error(result.error || "Failed to send reset email")
+        return { success: false, error: result.error || "Failed to send reset email" }
+      }
     } catch (error) {
       toast.error("Failed to send reset email. Please try again.")
       return { success: false, error: "Failed to send reset email" }

@@ -10,13 +10,15 @@ import { loginSchema, type LoginInput } from "../../lib/validations/auth"
 
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
-  const { login, isLoading, demoCredentials } = useAuthForm()
+  const demoCredentials = { email: "demo@demo.com", password: "Demo123!@#" }
+  const { login, isLoading } = useAuthForm()
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     setError,
+    setValue,
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -28,7 +30,10 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginInput) => {
     const result = await login(data)
-
+    if (result?.success && result?.token) {
+      // Store token for dashboard usage
+      window.localStorage.setItem("authToken", result.token)
+    }
     if (!result?.success && result?.error) {
       setError("root", { message: result.error })
     }
@@ -36,13 +41,8 @@ export function LoginForm() {
 
   // Auto-fill demo credentials
   const fillDemoCredentials = () => {
-    const emailInput = document.getElementById("email") as HTMLInputElement
-    const passwordInput = document.getElementById("password") as HTMLInputElement
-
-    if (emailInput && passwordInput) {
-      emailInput.value = demoCredentials.email
-      passwordInput.value = demoCredentials.password
-    }
+    setValue("email", demoCredentials.email)
+    setValue("password", demoCredentials.password)
   }
 
   return (
@@ -159,3 +159,4 @@ export function LoginForm() {
     </div>
   )
 }
+

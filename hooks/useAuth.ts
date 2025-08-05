@@ -4,7 +4,7 @@ import { useState } from "react"
 import { signIn, signOut, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import type { LoginInput } from "@/lib/validations/auth"
+import type { LoginInput } from "../lib/validations/auth"
 
 export function useAuth() {
   const [isLoading, setIsLoading] = useState(false)

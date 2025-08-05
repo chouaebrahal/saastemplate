@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useEffect } from "react"
+import { getDashboardData } from "../../lib/api/dashboard"
 import {
   BarChart3,
   Users,
@@ -26,65 +28,50 @@ import {
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [stats, setStats] = useState([])
+  const [recentActivity, setRecentActivity] = useState([])
+  const [sidebarItems, setSidebarItems] = useState([])
+  const [user, setUser] = useState(null)
+  useEffect(() => {
+    // Get token from localStorage (set after login)
+    const token = typeof window !== "undefined" ? window.localStorage.getItem("authToken") : null
+    getDashboardData(token || "token-1").then(data => {
+      // Map stat.icon from string to component
+      setStats(
+        data.stats.map(stat => ({
+          ...stat,
+          icon: getIconComponent(stat.icon)
+        }))
+      )
+      setRecentActivity(data.recentActivity)
+      setSidebarItems(
+        data.sidebarItems.map(item => ({
+          ...item,
+          icon: getIconComponent(item.icon)
+        }))
+      )
+      setUser(data.user)
+    })
+  }, [])
+  console.log("Dashboard data loaded:", user);
 
-  const stats = [
-    {
-      title: "Total Revenue",
-      value: "$45,231.89",
-      change: "+20.1%",
-      trend: "up",
-      icon: DollarSign,
-      color: "text-green-500",
-      bgColor: "bg-green-500/10",
-    },
-    {
-      title: "Active Users",
-      value: "2,350",
-      change: "+180.1%",
-      trend: "up",
-      icon: Users,
-      color: "text-blue-500",
-      bgColor: "bg-blue-500/10",
-    },
-    {
-      title: "Conversion Rate",
-      value: "12.5%",
-      change: "-19%",
-      trend: "down",
-      icon: TrendingUp,
-      color: "text-purple-500",
-      bgColor: "bg-purple-500/10",
-    },
-    {
-      title: "Total Orders",
-      value: "1,429",
-      change: "+7%",
-      trend: "up",
-      icon: BarChart3,
-      color: "text-orange-500",
-      bgColor: "bg-orange-500/10",
-    },
-  ]
-
-  const recentActivity = [
-    { user: "John Doe", action: "completed purchase", amount: "$299.00", time: "2 minutes ago" },
-    { user: "Sarah Chen", action: "signed up", amount: "", time: "5 minutes ago" },
-    { user: "Mike Johnson", action: "upgraded plan", amount: "$99.00", time: "10 minutes ago" },
-    { user: "Emma Wilson", action: "completed purchase", amount: "$149.00", time: "15 minutes ago" },
-    { user: "Alex Brown", action: "left review", amount: "", time: "20 minutes ago" },
-  ]
-
-  const sidebarItems = [
-    { icon: Home, label: "Dashboard", active: true },
-    { icon: BarChart3, label: "Analytics" },
-    { icon: Users, label: "Customers" },
-    { icon: FileText, label: "Orders" },
-    { icon: PieChart, label: "Reports" },
-    { icon: Calendar, label: "Calendar" },
-    { icon: MessageSquare, label: "Messages" },
-    { icon: Settings, label: "Settings" },
-  ]
-
+  // Helper to map icon string to Lucide component
+  function getIconComponent(iconName) {
+    const icons = {
+      Home,
+      BarChart3,
+      Users,
+      FileText,
+      PieChart,
+      Calendar,
+      MessageSquare,
+      Settings,
+      DollarSign,
+      TrendingUp,
+    }
+    return icons[iconName] || Home
+  }
+  // { icon: Settings, label: "Settings" },
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white">
       {/* Sidebar */}
@@ -96,14 +83,15 @@ export default function Dashboard() {
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-teal-400 rounded-lg flex items-center justify-center">
               <Zap className="w-5 h-5 text-white" />
             </div>
-            <span className="ml-3 text-xl font-bold bg-gradient-to-r from-blue-400 to-teal-400 bg-clip-text text-transparent">
-              SaaSify
-            </span>
-          </div>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-400 hover:text-white">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+  
+      <span className="ml-3 text-xl font-bold bg-gradient-to-r from-blue-400 to-teal-400 bg-clip-text text-transparent">
+        SaaSify
+      </span>
+    </div>
+    <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-400 hover:text-white">
+      <X className="w-6 h-6" />
+    </button>
+  </div>
 
         <nav className="mt-6 px-3">
           {sidebarItems.map((item, index) => (
@@ -146,7 +134,7 @@ export default function Dashboard() {
               </button>
               <div>
                 <h1 className="text-2xl font-bold">Dashboard</h1>
-                <p className="text-gray-400 text-sm">Welcome back, John!</p>
+                <p className="text-gray-400 text-sm">{user ? `Welcome back, ${user.name}!` : "Welcome!"}</p>
               </div>
             </div>
 
@@ -171,8 +159,8 @@ export default function Dashboard() {
               <div className="flex items-center space-x-3">
                 <img src="/placeholder.svg?height=32&width=32" alt="Profile" className="w-8 h-8 rounded-full" />
                 <div className="hidden md:block">
-                  <p className="text-sm font-medium">John Doe</p>
-                  <p className="text-xs text-gray-400">Admin</p>
+                  <p className="text-sm font-medium">{user ? user.name : "User"}</p>
+                  <p className="text-xs text-gray-400">{user ? user.email : ""}</p>
                 </div>
                 <ChevronDown className="w-4 h-4 text-gray-400" />
               </div>
@@ -283,23 +271,26 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { icon: Plus, label: "Add Product", color: "from-blue-500 to-cyan-500" },
-                { icon: Users, label: "Invite User", color: "from-purple-500 to-pink-500" },
-                { icon: FileText, label: "Create Report", color: "from-green-500 to-teal-500" },
-                { icon: Settings, label: "Settings", color: "from-orange-500 to-red-500" },
-              ].map((action, index) => (
-                <button
-                  key={index}
-                  className="flex flex-col items-center p-4 bg-gray-700/30 hover:bg-gray-700/50 rounded-xl transition-all duration-300 hover:scale-105 group"
-                >
-                  <div
-                    className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200`}
+                { icon: "Plus", label: "Add Product", color: "from-blue-500 to-cyan-500" },
+                { icon: "Users", label: "Invite User", color: "from-purple-500 to-pink-500" },
+                { icon: "FileText", label: "Create Report", color: "from-green-500 to-teal-500" },
+                { icon: "Settings", label: "Settings", color: "from-orange-500 to-red-500" },
+              ].map((action, index) => {
+                const IconComponent = getIconComponent(action.icon);
+                return (
+                  <button
+                    key={index}
+                    className="flex flex-col items-center p-4 bg-gray-700/30 hover:bg-gray-700/50 rounded-xl transition-all duration-300 hover:scale-105 group"
                   >
-                    <action.icon className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-sm font-medium">{action.label}</span>
-                </button>
-              ))}
+                    <div
+                      className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200`}
+                    >
+                      <IconComponent className="w-6 h-6 text-white" />
+                    </div>
+                    <span className="text-sm font-medium">{action.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </main>

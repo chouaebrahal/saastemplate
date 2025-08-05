@@ -5,13 +5,13 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, AlertCircle } from "lucide-react"
 import Link from "next/link"
-import { useAuthForm } from "../../hooks/useAuthForm"
+import { registerApi } from "../../lib/api/auth"
 import { registerSchema, type RegisterInput } from "../../lib/validations/auth"
 
 export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const { register: registerUser, isLoading } = useAuthForm()
+  const [isLoading, setIsLoading] = useState(false)
 
   const {
     register,
@@ -30,11 +30,13 @@ export function RegisterForm() {
   })
 
   const onSubmit = async (data: RegisterInput) => {
-    const result = await registerUser(data)
-
+    setIsLoading(true)
+    const result = await registerApi({ email: data.email, password: data.password })
+    setIsLoading(false)
     if (!result?.success && result?.error) {
       setError("root", { message: result.error })
     }
+    // You can show success message or redirect
   }
 
   return (
